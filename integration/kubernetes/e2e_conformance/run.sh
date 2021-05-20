@@ -27,6 +27,9 @@ RUNTIME="${RUNTIME:-containerd-shim-kata-v2}"
 CRI_RUNTIME="${CRI_RUNTIME:-containerd}"
 MINIMAL_K8S_E2E="${MINIMAL_K8S_E2E:-false}"
 KATA_HYPERVISOR="${KATA_HYPERVISOR:-}"
+SONOBUOY_IMAGE="${SONOBUOY_IMAGE:-}"
+KUBE_CONFORMANCE_IMAGE="${KUBE_CONFORMANCE_IMAGE:-}"
+KUBE_CONFORMANCE_IMAGE_VERSION="${KUBE_CONFORMANCE_IMAGE_VERSION:-}"
 
 # Overall Sonobuoy timeout in minutes.
 WAIT_TIME=${WAIT_TIME:-180}
@@ -93,6 +96,15 @@ run_sonobuoy() {
 	local cmd="sonobuoy"
 	cmd+=" run"
 	cmd+=" --wait=${WAIT_TIME}"
+	if [ "${SONOBUOY_IMAGE}" != "" ]; then
+	  cmd+=" --sonobuoy-image=${SONOBUOY_IMAGE}"
+	fi
+	if [ "${KUBE_CONFORMANCE_IMAGE}" != "" ]; then
+	  cmd+=" --kube-conformance-image=${KUBE_CONFORMANCE_IMAGE}"
+	fi
+	if [ "${KUBE_CONFORMANCE_IMAGE_VERSION}" != "" ]; then
+	  cmd+=" --kube-conformance-image-version=${KUBE_CONFORMANCE_IMAGE_VERSION}"
+	fi
 
 	if [ "${MINIMAL_K8S_E2E}" == "true" ]; then
 		minimal_focus=$(yaml_list_to_str_regex "jobs.minimal.focus" "${JOBS_FILE}")
@@ -177,7 +189,10 @@ main() {
 		create_kata_webhook
 	fi
 
-	get_sonobuoy
+	if ! command -v sonobuoy >/dev/null; then
+  	get_sonobuoy
+	fi
+
 	run_sonobuoy
 }
 
